@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+  <script type="text/javascript">
+    Couli.define('input', `
+      <input x-b='value'>
+    `, {
+      value: { events: { keyup: (e, el, a) => a.up().set({ value: +e.target.value || '' }) } }
+    });
+
+    Couli.define('arg1', `
+      <div>
+        <span>A: </span><input>
+      </div>
+    `, {
+      value: { hooks: { update: (el, val, a) => a.up().set({ arg1: val }) } }
+    });
+
+    Couli.define('arg2', `
+      <div>
+        <span>B: </span><input>
+      </div>
+    `, {
+      value: { hooks: { update: (el, val, a) => a.up().set({ arg2: val }) } }
+    });
+
+    Couli.define('select', `
+      <div>
+        <select x-lb='options'>
+          <option x-b="option">
+        </select>
+      </div>
+    `, {
+      options: { events: { change: (e, el, a) => { console.log(a);  a.up().set({ value: e.target.value }) } } }
+    });
+
+    Couli.define('operation-choices', `
+      <div>
+        <span>Operation: </span>
+        <select options='operationChoices'>
+      </div>
+    `, {
+      value: { hooks: { update: (el, val, a) => a.up().set({ operation: val }) } },
+      operationChoices: {},
+
+      '': { hooks: { mount: (el, vals, a) => a.set({ operationChoices: [
+        { option: '+' },
+        { option: '-' },
+        { option: '*' },
+        { option: '/' }
+      ]})  }}
+    });
+
+    Couli.define('result', `
+      <div>
+        <span x-b='result'></span>
+      </div>
+    `, {
+      result: {
+        value: ($) => calculate($.arg1, $.arg2, $.operation),
+        html: ($) => 'A ' + $.operation + ' B = ' + $.result
+      }
+    });
+
+    function calculate (first, second, operation) {
+      switch (operation) {
+        case '+':
+          return first + second;
+        case '-':
+          return first - second;
+        case '*':
+          return first * second;
+        case '/':
+          return first / second;
+      }
+    }
+
+    Couli.define('calculator', `
+      <div>
+        <arg1></arg1>
+        <operation-choices></operation-choices>
+        <arg2></arg2>
+        <result arg1='arg1' arg2='arg2' operation='operation'></result>
+      </div>
+    `, {
+      arg1: {},
+      arg2: {},
+      operation: {},
+
+      '': { hooks: { mount: (el, vals, a) => a.set({ arg1: '', arg2: '', operation: '+'  }) } }
+    });
+  </script>
+
+  <div id="app">
+    <calculator>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app')
+  </script>
+</body>
+</html>

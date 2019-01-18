@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+  <script type="text/javascript">
+    Couli.define('calculator', `
+      <div>
+        <span>A: </span> <input x-b="arg1">
+        <br>
+        <span>Operation: </span> <select x-lb="operationChoices"><option x-b='choice'></option></select>
+        <br>
+        <span>B: </span> <input x-b="arg2">
+        <br>
+        <span x-b="result"></span>
+      </div>
+    `, {
+
+      arg1: { events: { keyup: (e, el, a) => a.set({ arg1: +e.target.value || '' }) } },
+      arg2: { events: { keyup: (e, el, a) => a.set({ arg2: +e.target.value || '' }) } },
+      operation: {},
+
+      operationChoices: {
+        events: { change: (e, el, a) => a.set({ operation: e.target.value }) },
+      },
+
+      result: {
+        value: ($) => calculate($.arg1, $.arg2, $.operation),
+        html: ($) => 'A ' + $.operation + ' B = ' + $.result
+      },
+
+      '': { hooks: { mount: (e, vals, a) => a.set({
+        operation: '+',
+
+        operationChoices: [
+          { choice: '+' },
+          { choice: '-' },
+          { choice: '*' },
+          { choice: '/' }
+        ]
+      })
+      }}
+
+    });
+
+    function calculate (first, second, operation) {
+      switch (operation) {
+        case '+':
+          return first + second;
+        case '-':
+          return first - second;
+        case '*':
+          return first * second;
+        case '/':
+          return first / second;
+      }
+    }
+  </script>
+
+  <div id="app">
+    <calculator>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app')
+  </script>
+</body>
+</html>

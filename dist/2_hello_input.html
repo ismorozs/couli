@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+  <script type="text/javascript">
+    Couli.define('hello-input',
+      `<div>
+        Enter your name <input x-b="name">
+        <br>
+        <span x-b="greeting"></span>
+      </div>`,
+
+      {
+        name: { events: { keyup: (e, el, a) => a.set({ name: e.target.value }) } },
+        greeting: { html: ($) => 'Hello, ' + $.name + '!' }
+      }
+
+    )
+  </script>
+
+  <div id="app">
+    <hello-input>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app');
+  </script>
+</body>
+</html>

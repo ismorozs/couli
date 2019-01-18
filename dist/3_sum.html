@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+  <script type="text/javascript">
+    Couli.define('sum', `
+      <div>
+        <input x-b="arg1">
+        <br>
+        +
+        <br>
+        <input x-b="arg2">
+        <br>
+        =
+        <span x-b="result"></span>
+      </div>
+    `, {
+
+      arg1: { events: { keyup: (e, el, a) => a.set({ arg1: +e.target.value || '' }) } },
+      arg2: { events: { keyup: (e, el, a) => a.set({ arg2: +e.target.value || '' }) } },
+      
+      result: {
+        value: ($) => $.arg1 + $.arg2
+      }
+
+    });
+  </script>
+
+  <div id="app">
+    <sum>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app')
+  </script>
+</body>
+</html>

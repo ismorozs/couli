@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <style type="text/css">
+    div {
+      border: 2px solid black;
+    }
+  </style>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+
+  <script type="text/javascript">
+    window.COLORS = ['red', 'green', 'blue', 'orange', 'grey', 'yellow', 'violet', 'teal', 'purple', 'pink'];
+
+    const styleStr = window.COLORS.reduce((a, v) => `${a} .${v} {background-color: ${v} }\n`, '');
+
+    const styleEl = document.createElement('style');
+    styleEl.appendChild( document.createTextNode(styleStr) );
+    document.head.appendChild(styleEl);
+
+    function evaluateClass (item) {
+      return window.COLORS.reduce((a, v) => {
+        a[v] = v === item.color
+        return a;
+      }, {})
+    }
+  </script>
+
+  <script type="text/javascript">
+    Couli.define('select', `
+      <select x-lb='options'>
+        <option x-b="option">
+      </select>
+    `, {
+      options: { events: { change: (e, el, a) => { console.log(a.up()); a.up().set({ choosen: e.target.value }) } } }
+    });
+
+    Couli.define('select-color', `
+        <select options=colors>
+    `, {
+      colors: {},
+      choosen: { hooks: { update: (e, val, ci) => { console.log(val, ci); ci.up().set({ color: val }) } } },
+      '': { hooks: { mount: (el, vals, a) => a.set({ colors: window.COLORS.map((el) => ({ option: el })) }) } }
+    });
+
+    Couli.define('select-child-color', `
+      <select-color>
+    `, {
+      color: { hooks: { update: (el, val, ci) => { console.log(val, ci); ci.up().set({ childColor: val }) } } }
+    });
+
+    Couli.define('small-square', `
+      <div>
+        <span x-b='number'>№4</span>
+      </div>
+    `, {
+      '': { class: evaluateClass },
+      color: {},
+    }, {
+      '':  {
+        width: 200,
+        height: 200,
+        position: 'relative',
+      },
+      number: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: 'white'
+      }
+    });
+
+    Couli.define('middle-square', `
+      <div>
+        Child color: <select-child-color></select-child-color>
+        <span x-b='number'>№3</span>
+        <small-square color='childColor'>
+      </div>
+    `, {
+      color: {},
+      childColor: {},
+      '': { class: evaluateClass }
+    }, {
+      '': {
+        width: 350,
+        height: 350,
+        position: 'relative',
+      },
+      number: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: 'white'
+      }
+    });
+
+    Couli.define('big-square', `
+      <div>
+        Child color: <select-child-color></select-child-color>
+        <span x-b='number'>№2</span>
+        <middle-square color='childColor'>
+      </div>
+    `, {
+      color: {},
+      childColor: {},
+      '': { class: evaluateClass }
+    }, {
+      '': {
+        width: 500,
+        height: 500,
+        position: 'relative',
+      },
+      number: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: 'white'
+      }
+    });
+
+    Couli.define('app', `
+      <div>
+        Child color: <select-child-color></select-child-color>
+        <span x-b='number'> №1</span>
+        <big-square color='childColor'>
+      </div>
+    `, {
+      childColor: {}
+    }, {
+      '': {
+        position: 'relative'
+      },
+      number: {
+        position: 'absolute',
+        top: 0,
+        right: 0,
+        backgroundColor: 'white'
+      }
+    })
+
+  </script>
+
+  <div id="app">
+    <app>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app')
+  </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+</head>
+<body>
+  <script type="text/javascript" src="couli.js"></script>
+  <script type="text/javascript">
+    Couli.define('calc-button', `
+      <div>
+        <button x-b="buttonBinding"></button>
+      </div>
+    `, {
+      buttonBinding: {
+        events: {
+          click: (e, el, a) => {
+            const calculator = a.up().up();
+            let input = calculator.get('input').slice();
+            
+            switch (e.target.innerHTML) {
+              case 'c':
+                input.pop();
+                break;
+
+              case '=':
+                input = [ eval( input.join('') ) ];
+                break
+
+              case '+':
+              case '-':
+              case '/':
+              case '*':
+                const secondTime = input.filter((el) => ['+', '-', '/', '*'].indexOf(el) >= 0).length;
+                if (secondTime) {
+                  input = [ eval( input.join('') ) , e.target.innerHTML ];
+                  break;
+                }
+
+              default:
+                input.push(e.target.innerHTML);
+            }
+
+            calculator.set({ input });
+        }
+      }
+    }
+    }, {
+      buttonBinding: {
+        width: 50,
+        fontSize: '1.5rem'
+      },
+
+      'buttonBinding:hover': {
+        backgroundColor: 'rgba(0,0,0,0.2)'
+      }
+    });
+
+    Couli.define('calculator', `
+      <div>
+        <input x-b="input">
+        <div x-lb="buttons">
+          <calc-button>
+        </div>
+      </div>
+    `, {
+      input: { html: ($) => $.input.join('') },
+
+      '': { hooks: { mount: (el, vals, a) => a.set({
+        input: [],
+
+        buttons: [
+          { buttonBinding: '1' },
+          { buttonBinding: '2' },
+          { buttonBinding: '3' },
+          { buttonBinding: '+' },
+          { buttonBinding: '4' },
+          { buttonBinding: '5' },
+          { buttonBinding: '6' },
+          { buttonBinding: '-' },
+          { buttonBinding: '7' },
+          { buttonBinding: '8' },
+          { buttonBinding: '9' },
+          { buttonBinding: '*' },
+          { buttonBinding: 'c' },
+          { buttonBinding: '0' },
+          { buttonBinding: '=' },
+          { buttonBinding: '/' },
+        ] }) } }
+    }, {
+      '': {
+        width: 200,
+      },
+
+      input: {
+        width: '100%',
+        fontSize: '1.2rem',
+      },
+      buttons: {
+        display: 'flex',
+        flexFlow: 'wrap',
+      }
+    });
+  </script>
+
+  <div id="app">
+    <calculator>
+  </div>
+
+  <script type="text/javascript">
+    Couli.apply('#app')
+  </script>
+</body>
+</html>
