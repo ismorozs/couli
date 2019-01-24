@@ -1,27 +1,24 @@
 {
   "name": "couli",
   "version": "0.0.2",
-  "description": "",
-  "main": "index.js",
+  "description": "Library for creating web user interfaces",
+  "main": "./dist/couli.js",
   "scripts": {
     "start": "webpack-dev-server --mode=development --hot",
     "build": "webpack --mode=development"
   },
-  "author": "",
+  "author": "Igor Morozov",
   "license": "MIT",
   "devDependencies": {
-    "babel-core": "^6.26.3",
+    "babel-core": "6.26.3",
     "babel-loader": "7.1.5",
     "babel-preset-env": "1.7.0",
     "clean-webpack-plugin": "0.1.19",
-    "file-loader": "^1.1.11",
-    "html-loader": "^0.5.5",
-    "html-webpack-plugin": "3.2.0",
-    "webpack": "4.16.5",
-    "webpack-cli": "3.1.0",
-    "webpack-dev-server": "3.1.5"
+    "webpack": "4.29.0",
+    "webpack-cli": "3.2.1",
+    "webpack-dev-server": "3.1.14"
   },
-  "dependencies": {
-    "express": "4.16.3"
-  }
+  "homepage": "https://github.com/ismorozs/couli",
+  "repository": "https://github.com/ismorozs/couli.git",
+  "bugs": "https://github.com/ismorozs/couli/issues"
 }
