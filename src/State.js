@@ -171,6 +171,10 @@ function moveUpStatePath (level, statePath) {
   let newStatePath;
   let lastIdx = statePath.length;
 
+  if (level === '') {
+    return createAccessor(statePath.slice(0, 2));
+  }
+
   if (isString(level)) {
     while (lastIdx--) {
       if (statePath[lastIdx] === level) {

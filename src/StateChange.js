@@ -201,20 +201,14 @@ function setValue (bindingName, change, accessor, calledDependences) {
 }
 
 function setValueForList (binding, change, arr, accessor) {
-  Object.keys(change.value).forEach((i) => {
-    const realChangeValues = mapKeys(change.value[i], (key) => binding.links[key] ? binding.links[key].link : key);
-    setValues( prepareChangeObject(realChangeValues), accessor.path.concat(binding.name, i, binding.listItem.name))
-  });
+  Object
+    .keys(change.value)
+    .forEach((i) => setValues( prepareChangeObject(change.value[i]), accessor.path.concat(binding.name, i, binding.listItem.name)));
 
-  const keysEquality = areEqual(arr, change.value);
-
-  Object.keys(keysEquality).map((idx) => {
-    const changeObj = keysEquality[idx];
-
+  const indexEquality = areEqual(arr, change.value);
+  forEach(indexEquality, (changeObj, idx) => {
     if (changeObj.remove) {
-      const removedNode = arr.splice(idx, 1)[0][binding.listItem.name];
-      changeObj.remove = removedNode[LIB_ATTR.SELF].el;
-      addLifeCycleHook('remove', binding.listItem.state[LIB_ATTR.SELF], removedNode, accessor, idx);
+      changeObj.remove = removeListItem(arr, idx, binding, accessor);
     }
 
     sendToRenderQueue(accessor.path.concat(binding.name, idx, binding.listItem.name), { [LIB_ATTR.FULL_CHANGE]: changeObj });
@@ -222,8 +216,7 @@ function setValueForList (binding, change, arr, accessor) {
 }
 
 function setValueForComponent (binding, change, component, statePath) {
-  const realChangeValues = mapKeys(change.value, (key) => component.links[key] ? component.links[key].link : key);
-  setValues( prepareChangeObject(realChangeValues), statePath.concat(binding.name));
+  setValues( prepareChangeObject(change.value), statePath.concat(binding.name));
 }
 
 function modifyList (action, args, accessor) {
@@ -239,7 +232,8 @@ function modifyList (action, args, accessor) {
       break;
 
     case 'remove':
-      changeObj = removeFromList(arr, start, args.num || 1, accessor, itemName);
+      const end = start + (args.num || 1);
+      changeObj = removeFromList(arr, start, end, accessor.component, accessor);
       break;
   }
 
@@ -263,15 +257,19 @@ function addToList (arr, start, els, listPath, itemName) {
   return { [start]: { [LIB_ATTR.FULL_CHANGE]: { add: { start, end: start + els.length } } } };
 }
 
-function removeFromList (arr, start, num, accessor, itemName) {
-  const removed = arr.splice(start, num);
+function removeFromList (arr, start, end, listBinding, accessor) {
+  const changeObj = {};
 
-  return removed.reduce((a, vals, i) => {
-    const el = vals[itemName][LIB_ATTR.SELF].el;
-    a[start + i] = { [LIB_ATTR.FULL_CHANGE]: { remove: el } };
+  for (let i = start; i < end; i++) {
+    const removedDOMNode = removeListItem(arr, i, listBinding, accessor);
+    changeObj[i] = { [LIB_ATTR.FULL_CHANGE]: { remove: removedDOMNode } }
+  }
 
-    addLifeCycleHook('remove', accessor.component.listItem.state[LIB_ATTR.SELF], vals[itemName], accessor, start + i);
+  return changeObj;
+}
 
-    return a;
-  }, {});
+function removeListItem (arr, idx, listBinding, accessor) {
+  const removedNode = arr.splice(idx, 1)[0][listBinding.listItem.name];
+  addLifeCycleHook('remove', listBinding.listItem.state[LIB_ATTR.SELF], removedNode, accessor, idx);
+  return removedNode[LIB_ATTR.SELF].el;
 }
