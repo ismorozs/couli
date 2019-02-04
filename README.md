@@ -130,7 +130,8 @@ To point to binding markup just use the binding name as a selector.
 ```ComponentInterface``` is a thing that allows getting and setting binding values on the component, getting component and binding markups as well as moving from one component to another.
 Methods:
 ##### .get(String key)
-Returns value of the binding with ```key``` name. Or if ```key``` is ```undefined``` returns object of all values of the component.
+Returns value of the binding with ```key``` name. Or if no argument is given, returns an object of all values of the component.
+If you are trying to get the value of a list binding, then instead of receiving the value itself, you will get another interface ```ArrayInterface``` for working with this list of values through which you will be able to efficiently add, remove, change and get values of the list. More on ```ArrayInterface``` see below.
 ##### .set(Object changeHash)
 Sets values of the component's bindings to values of ```changeHash``` where keys are binding names.
 ##### .up()
@@ -138,9 +139,41 @@ Sets values of the component's bindings to values of ```changeHash``` where keys
 ##### .up(String componentUserName)
 If no argument is given, returns ```ComponentInterface``` of the parent component.  
 If a numeric argument is given, returns ```ComponentInterface``` of the parent component ```num``` levels higher.
-If string argument is given, returns ```ComponentInterface``` of the parent component with ```componentUserName``` user-defined component name.
+If a string argument is given, returns ```ComponentInterface``` of the parent component with the name that corresponds to the string argument value. See below on how to give a component a custom name.
 ##### .markup(String bindingName)
-Returs HTMLElement binding with ```bindingName``` is assigned to.
+Returns HTMLElement binding with ```bindingName``` is assigned to.
+
+### ArrayInterface
+If a binding you want to ```.get()``` value from is of list type, then ```ArrayInterface``` is what you will get instead and here's methods that you can call on it.
+##### .get(Number num)
+Get ```ComponentInterface``` of list item at ```num``` position.
+##### .push(Object newItem)
+Add ```newItem```  to the end of the list.
+##### .unshift (Object newItem)
+Add ```newItem``` to the begining of the list.
+##### .add(Number start, Object newItem)
+Add ```newItem``` at ```num``` postion of the list.  
+
+Instead of passing only one ```Object```, ```.push```, ```.unshift``` and ```.add``` methods can as well receive an array of items instead.
+
+##### .pop(Number num)
+Remove ```num``` last elements from the list. ```num``` defaults to 1 if omitted.
+##### .shift(Number num)
+Remove ```num``` first elements from the list. ```num``` defaults to 1 if omitted.
+##### .remove(Number start, Number num)
+Remove ```num``` elements from the list starting from ```start``` position.
+##### .value()
+Get raw values of the list.
+##### .forEach(Callback cb)
+Iterates over the values of the list and call ```cb``` function with arguments ```(Object item, Number index)``` on each of the items.
+##### .filter(Callback cb)
+Returns a new list with items from the initial list for which ```cb``` function with arguments ```(Object item, Number index)``` returns a ```true``` value
+##### .map(Callback cb)
+Returns a new array with items being results of calling ```cb``` function with arguments ```(Object item, Number index)``` on each item of the initial list.
+
+### Component custom naming
+Components can be given custom names so that they could be referenced later when looking for a specific component in components chains or setting component values directly programmatically from parent to child.
+To give a component a name you add ```x-state-name``` attribute with the value being the name of the given component.
 
 ### x-b and x-lb difference
 ```x-b``` attribute points to HTMLElement for the binding
