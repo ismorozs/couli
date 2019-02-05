@@ -1,8 +1,7 @@
 const path = require('path');
 
-module.exports = {
+var config = {
   entry: './src/main.js',
-  devtool: 'eval-source-map',
   devServer: {
     contentBase: './dist'
   },
@@ -16,4 +15,17 @@ module.exports = {
       { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" },
     ]
   }
+};
+
+module.exports = (env, argv) => {
+  
+  if (argv.mode === 'development') {
+    config.devtool = 'inline-source-map';
+  }
+
+  if (argv.mode === 'production') {
+    config.output.filename = 'couli.min.js';
+  }
+
+  return config;
 };

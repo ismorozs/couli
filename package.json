@@ -5,7 +5,8 @@
   "main": "./dist/couli.js",
   "scripts": {
     "start": "webpack-dev-server --mode=development --hot",
-    "build": "webpack --mode=development"
+    "build": "webpack --mode=development",
+    "bp": "webpack --mode=production"
   },
   "author": "Igor Morozov",
   "license": "MIT",
