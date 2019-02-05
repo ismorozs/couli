@@ -181,12 +181,12 @@ function setValue (bindingName, change, accessor, calledDependences) {
     calledDependences.push(bindingName + ':' + change.type);
 
     if (!binding.html) {
-      setValue(bindingName, { value: change.value, type: 'html' }, accessor, calledDependences);
+      setValue(bindingName, { value: change.value, type: 'html', force: change.force }, accessor, calledDependences);
     }
 
     const link = component.links[bindingName];
     if (link) {
-      setValue(link.link, { value: change.value, type: 'value' }, accessor.down(link.component), [])
+      setValue(link.link, { value: change.value, type: 'value', force: change.force }, accessor.down(link.component), []);
     }
 
     forEach(binding.dependants, (dependant, dependantKey) => {
