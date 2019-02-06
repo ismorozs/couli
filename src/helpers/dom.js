@@ -32,10 +32,13 @@ function insertBeforeNode (el, nextEl) {
 
 function cloneHTMLMarkup (markup) {
   const markupStr = isHTMLString(markup.trim()) ? markup : document.querySelector(markup).innerHTML;
+  return convertStringToHTML(markupStr);
+}
 
-  const div = document.createElement('div');
-  div.innerHTML = markupStr;
-  return div.children[0];
+function convertStringToHTML (markupString) {
+  const parser = new DOMParser();
+  const parsedDocument = parser.parseFromString(markupString, 'text/html');
+  return parsedDocument.body.firstElementChild;
 }
 
 function walkNodes (node, cb) {
