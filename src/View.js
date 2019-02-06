@@ -2,7 +2,7 @@ import LIB_ATTR from './globals/attributes';
 import { toDashCase, has } from './helpers/common';
 import { forEach, map, filter, splitPiece } from './helpers/object';
 
-import { isNumber, isUndefined } from './helpers/checkers'
+import { isNumber, isUndefined } from './helpers/checkers';
 
 import {
   createAccessor,
@@ -16,6 +16,8 @@ import {
 import {
   replaceNodes,
   removeNode,
+  rewriteToNode,
+  emptyNode,
 } from './helpers/dom';
 
 export {
@@ -58,7 +60,7 @@ function applyMarkup (component, value, statePath, changes) {
     return;
   }
 
-  component.markup.innerHTML = value;
+  rewriteToNode(component.markup, value);
 
   return component;
 }
@@ -170,7 +172,7 @@ function renderList (listComponent, itemsValues, statePath, changes) {
     listNode.setAttribute(LIB_ATTR.COMPONENT_TYPE, LIB_ATTR.COMPONENT_LIST);
   }
 
-  listNode.innerHTML = '';
+  emptyNode(listNode);
   listNode.appendChild(listFragment);
 
   parentNode.insertBefore(listNode, nextNode);

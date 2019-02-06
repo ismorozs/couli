@@ -17,6 +17,8 @@ export {
   walkNodes,
   removeNode,
   insertBeforeNode,
+  rewriteToNode,
+  emptyNode,
 };
 
 function replaceNodes (original, replacement) {
@@ -55,4 +57,20 @@ function collectHTMLNodes (root, isWanted) {
 
 function removeNode (node) {
   node.parentNode.removeChild(node);
+}
+
+function rewriteToNode (node, text) {
+  emptyNode(node);
+  writeToNode(node, text);
+}
+
+function writeToNode (node, text) {
+  const textNode = document.createTextNode(text);
+  node.appendChild(textNode);
+}
+
+function emptyNode (node) {
+  while (node.hasChildNodes()) {
+    node.removeChild(node.firstChild);
+  }
 }
