@@ -35,6 +35,7 @@ export {
 };
 
 const CHANGES = { changes: {}, collecting: false };
+const PROMISES_RESOLVES = [];
 const LIFE_CYCLE_HANDLERS = { list: [] };
 
 function startTransaction () {
@@ -46,7 +47,7 @@ function applyChanges () {
   const changes = CHANGES.changes;
   CHANGES.changes = {};
   renderChanges(changes);
-  runLifeCycleHooks();
+  return runLifeCycleHooks();
 }
 
 function runLifeCycleHooks () {
@@ -55,10 +56,21 @@ function runLifeCycleHooks () {
   lifeCycleHandlers.forEach((h) => h());
 
   if (!isEmpty(CHANGES.changes)) {
-    applyChanges();
+    return applyChanges();
   }
 
+  return finalizeTransaction();
+}
+
+function finalizeTransaction () {
   CHANGES.collecting = false;
+  let resolvePromise;
+
+  while (resolvePromise = PROMISES_RESOLVES.pop()) {
+    resolvePromise(true);
+  }
+
+  return Promise.resolve(true);
 }
 
 function sendToRenderQueue (path, change) {
@@ -137,10 +149,10 @@ function setValues (changeValues, statePath, calledDependences) {
   addLifeCycleHook('update', accessor.component.state[LIB_ATTR.SELF], accessor.values, accessor, statePath.slice(-2)[0]);
 
   if (isCollectingChanges()) {
-    return;
+    return new Promise((res) => PROMISES_RESOLVES.push(res));
   }
 
-  applyChanges();
+  return applyChanges();
 }
 
 function setValue (bindingName, change, accessor, calledDependences) {
@@ -240,10 +252,10 @@ function modifyList (action, args, accessor) {
   forEach(changeObj, (change, idx) => sendToRenderQueue(listPath.concat(idx, itemName, LIB_ATTR.FULL_CHANGE), changeObj[idx][LIB_ATTR.FULL_CHANGE]));
 
   if (isCollectingChanges()) {
-    return;
+    return new Promise((res) => PROMISES_RESOLVES.push(res));
   }
 
-  applyChanges();
+  return applyChanges();
 }
 
 function addToList (arr, start, els, listPath, itemName) {
