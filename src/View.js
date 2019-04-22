@@ -1,17 +1,10 @@
 import LIB_ATTR from './globals/attributes';
-import { toDashCase, has } from './helpers/common';
-import { forEach, map, filter, splitPiece } from './helpers/object';
+import { toDashCase } from './helpers/common';
+import { forEach, splitPiece } from './helpers/object';
 
 import { isNumber, isUndefined } from './helpers/checkers';
 
-import {
-  createAccessor,
-  addMarkup,
-  getMarkup,
-  removeMarkup,
-  removeComponent,
-  getOnlyValues,
-} from './State';
+import { createAccessor } from './State';
 
 import {
   replaceNodes,
@@ -124,7 +117,6 @@ function drawComponent (values, statePath) {
 }
 
 function updateComponent (component, values, statePath, changes) {
-  const itemAccessor = createAccessor(statePath);
   const componentMarkup = values[LIB_ATTR.SELF].el;
 
   forEach(changes, (change, bindingName) => {

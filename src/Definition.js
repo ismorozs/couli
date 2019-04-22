@@ -3,7 +3,6 @@ import RE from './globals/regexp';
 
 import {
   cloneHTMLMarkup,
-  collectHTMLNodes,
   walkNodes,
 } from './helpers/dom';
 
@@ -16,11 +15,9 @@ import {
   isFunction,
   isObject,
   isEmpty,
-  isDOMElement,
 } from './helpers/checkers';
 
 import {
-  has,
   toCamelCase,
   getShortName,
 } from './helpers/common';
@@ -239,7 +236,7 @@ function getDependenciesNames(func) {
   const dependenciesNames = [];
   const funcStr = func.toString();
   let dependencyName;
-  while (dependencyName = valuesObjRegExp.exec(funcStr)) {
+  while ((dependencyName = valuesObjRegExp.exec(funcStr))) {
     dependenciesNames.push(dependencyName[1]);
   }
   return dependenciesNames;
@@ -261,7 +258,7 @@ function compute (func, valuesObj, componentInterface) {
 function setupComponentsLinks (component, parentComponent) {
   Object.assign(
     parentComponent.links,
-    map(component.outerNames, (k, v) => ({ link: k, component: component.stateId }))
+    map(component.outerNames, (k) => ({ link: k, component: component.stateId }))
   );
 }
 
@@ -361,13 +358,7 @@ function getComponentOpts (obj) {
 }
 
 function getComponentByName (name) {
-  const component = COMPONENTS[ toCamelCase(name) ];
-
-  if (!component) {
-    throw new ComponentNotExistsError(name);
-  }
-
-  return component;
+  return COMPONENTS[ toCamelCase(name) ];
 }
 
 function createBinding (name, component, el) {

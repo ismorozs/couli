@@ -91,7 +91,7 @@ function getStatePathToItem (el, indexlessStatePath) {
   const statePath = [];
 
   let elementName;
-  while (elementName = getRealName( indexlessStatePath.pop() )) {
+  while ((elementName = getRealName( indexlessStatePath.pop() ))) {
 
     if (has(elementName, LIB_ATTR.ITEM)) {
       elementName = elementName.slice(LIB_ATTR.ITEM.length);
@@ -116,5 +116,5 @@ function getToItemNode (el) {
       return curEl;
     }
     curEl = curEl.parentNode;
-  };
+  }
 }

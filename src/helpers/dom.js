@@ -1,14 +1,6 @@
-import LIB_ATTR from '../globals/attributes';
-
 import {
-  isArray,
   isHTMLString,
-  isDOMElement,
 } from './checkers';
-
-import ComponentNotExistsError from '../errors/ComponentNotExistsError';
-
-const COMPONENTS = {};
 
 export {
   replaceNodes,

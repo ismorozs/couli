@@ -1,0 +1,4 @@
+nodemodules
+dist
+src/main.js
+webpack.config.js

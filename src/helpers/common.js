@@ -35,7 +35,7 @@ function has (obj, el) {
   }
 
   return obj.indexOf(el) >= 0;
-};
+}
 
 function getFalsePaths (obj) {
   const onlyFalsePaths = {};
@@ -61,5 +61,5 @@ function toDashCase (str) {
 }
 
 function toCamelCase (str) {
-  return str.replace(/\-(.)/g, (match) => match[1].toUpperCase());
+  return str.replace(/-(.)/g, (match) => match[1].toUpperCase());
 }

@@ -1,6 +1,6 @@
 import LIB_ATTR from './globals/attributes';
 
-import { set, forEach, map, toObject, mapKeys } from './helpers/object';
+import { set, forEach, map, toObject } from './helpers/object';
 
 import {
   isEmpty,
@@ -66,7 +66,7 @@ function finalizeTransaction () {
   CHANGES.collecting = false;
   let resolvePromise;
 
-  while (resolvePromise = PROMISES_RESOLVES.pop()) {
+  while ((resolvePromise = PROMISES_RESOLVES.pop())) {
     resolvePromise(true);
   }
 
@@ -83,7 +83,7 @@ function isCollectingChanges () {
 
 function addLifeCycleHook (hookType, binding, values, accessor, idx) {
   const hook = binding.hooks[hookType];
-  const statePath = accessor.path;
+  
   LIFE_CYCLE_HANDLERS.list.push(() => {
     const el = values[binding.name || LIB_ATTR.SELF].el;
     const vals = !binding.name ? getOnlyValues(values) : values[binding.name].value;
@@ -109,7 +109,7 @@ function createStateNodes (statePath) {
 }
 
 function createStateNode (component) {
-  const valuesNodes = map(component.state, (binding, bindingName) => {
+  const valuesNodes = map(component.state, (binding) => {
     const valueNode = binding.isList ? [] : {};
 
     return VALUE_TYPES.reduce((a, key) => {

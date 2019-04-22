@@ -43,7 +43,7 @@ function copy (destination, source) {
   }
 
   return destination;
-};
+}
 
 function copyArray (destination, source) {
   for (let i = 0; i < source.length; i++) {
@@ -63,4 +63,4 @@ function copyArray (destination, source) {
   }
 
   return destination;
-};
+}

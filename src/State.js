@@ -4,9 +4,6 @@ import { get, set, forEach, map } from './helpers/object';
 
 import { has } from './helpers/common';
 
-import StateAccessError from './errors/StateAccessError';
-import StateLookupError from './errors/StateLookupError';
-
 import { RESERVED_BINDING_NAMES } from './Definition';
 
 import {
@@ -19,7 +16,6 @@ import {
 } from './StateChange';
 
 import {
-  isEmpty,
   isArray,
   isString,
   isNumber,
@@ -168,7 +164,6 @@ function getValuesTree (values, component, valuesTree) {
 }
 
 function moveUpStatePath (level, statePath) {
-  let newStatePath;
   let lastIdx = statePath.length;
 
   if (level === '') {
