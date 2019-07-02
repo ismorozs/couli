@@ -9,6 +9,7 @@ var config = {
     filename: 'couli.js',
     path: path.resolve(__dirname, 'dist'),
     library: 'Couli',
+    libraryTarget: 'umd',
   },
   module: {
     rules: [
