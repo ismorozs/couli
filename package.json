@@ -1,6 +1,6 @@
 {
   "name": "couli",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "Library for creating web user interfaces",
   "main": "./dist/couli.js",
   "scripts": {

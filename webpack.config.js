@@ -10,6 +10,7 @@ var config = {
     path: path.resolve(__dirname, 'dist'),
     library: 'Couli',
     libraryTarget: 'umd',
+    globalObject: 'this',
   },
   module: {
     rules: [
