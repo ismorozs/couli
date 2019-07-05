@@ -218,9 +218,11 @@ function setValueForList (binding, change, arr, accessor) {
     .forEach((i) => setValues( prepareChangeObject(change.value[i]), accessor.path.concat(binding.name, i, binding.listItem.name)));
 
   const indexEquality = areEqual(arr, change.value);
+  let removedCount = 0;
   forEach(indexEquality, (changeObj, idx) => {
     if (changeObj.remove) {
-      changeObj.remove = removeListItem(arr, idx, binding, accessor);
+      changeObj.remove = removeListItem(arr, idx - removedCount, binding, accessor);
+      removedCount++;
     }
 
     sendToRenderQueue(accessor.path.concat(binding.name, idx, binding.listItem.name), { [LIB_ATTR.FULL_CHANGE]: changeObj });
