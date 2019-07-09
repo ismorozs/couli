@@ -1,12 +1,11 @@
 {
   "name": "couli",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "description": "Library for creating web user interfaces",
   "main": "./dist/couli.js",
   "scripts": {
     "start": "webpack-dev-server --mode=development --hot",
-    "build": "webpack --mode=development",
-    "bp": "webpack --mode=production"
+    "build": "sh ./build.sh"
   },
   "author": "Igor Morozov",
   "license": "MIT",

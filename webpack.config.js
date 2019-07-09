@@ -22,7 +22,7 @@ var config = {
 module.exports = (env, argv) => {
   
   if (argv.mode === 'development') {
-    config.devtool = 'inline-source-map';
+    config.devtool = env.NO_SOURCE_MAP ? false : 'inline-source-map';
   }
 
   if (argv.mode === 'production') {
