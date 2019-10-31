@@ -1,7 +1,7 @@
 const path = require('path');
 
 var config = {
-  entry: './src/main.js',
+  entry: './src/Component.js',
   devServer: {
     contentBase: './dist'
   },
@@ -19,7 +19,7 @@ var config = {
   }
 };
 
-module.exports = (env, argv) => {
+module.exports = (env = {}, argv = {}) => {
   
   if (argv.mode === 'development') {
     config.devtool = env.NO_SOURCE_MAP ? false : 'inline-source-map';

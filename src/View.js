@@ -1,4 +1,4 @@
-import LIB_ATTR from './globals/attributes';
+import LIB_ATTR from './values/attributes';
 import { toDashCase } from './helpers/common';
 import { forEach, splitPiece } from './helpers/object';
 
@@ -78,12 +78,12 @@ function drawComponent (values, statePath) {
   itemMarkup.setAttribute(LIB_ATTR.COMPONENT_TYPE, (component.isListItem) ? LIB_ATTR.ITEM : LIB_ATTR.COMPONENT);
 
   forEach(render, (renderFunc, renderType) => {
-    if (component.state[LIB_ATTR.SELF][renderType]) {
+    if (component.bindings[LIB_ATTR.SELF][renderType]) {
       renderFunc({ markup: itemMarkup }, values[LIB_ATTR.SELF][renderType]);
     }
   });
 
-  forEach(component.state, (binding, bindingName) => {
+  forEach(component.bindings, (binding, bindingName) => {
     if (!binding.markup) {
       return;
     }
@@ -129,7 +129,7 @@ function updateComponent (component, values, statePath, changes) {
       return;
     }
 
-    const binding = component.state[bindingName];
+    const binding = component.bindings[bindingName];
     const statePathToBinding = statePath.concat(bindingName);
 
     if (binding.isComponent || binding.isList) {

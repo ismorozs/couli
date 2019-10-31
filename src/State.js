@@ -1,10 +1,15 @@
-import LIB_ATTR from './globals/attributes';
+import LIB_ATTR from './values/attributes';
 
 import { get, set, forEach, map } from './helpers/object';
 
-import { has } from './helpers/common';
+import { has, getRealName } from './helpers/common';
 
-import { RESERVED_BINDING_NAMES } from './Definition';
+import { RESERVED_BINDING_NAMES, VALUE_TYPES } from './values/index';
+
+import { walkUpNodes } from './helpers/dom';
+
+import ComponentLookupError from './errors/ComponentLookupError';
+import ForbiddenBindingNameError from './errors/ForbiddenBindingNameError';
 
 import {
   createStateNodes,
@@ -23,15 +28,17 @@ import {
 } from './helpers/checkers';
 
 export {
+  createBinding,
+  modifyToListBinding,
   createElement,
   createAccessor,
-  getOnlyValues,
   getComponent,
   setState,
   prepareChangeObject,
+  getStatePathFromNode
 };
 
-const ELEMENTS = {};
+const COMPONENTS = {};
 const STATE = {};
 let ELEMENT_COUNTER = 1;
 
@@ -43,13 +50,13 @@ function getState (path) {
   return get(STATE, path);
 }
 
-function createElement (componentOpts) {
+function createElement (component) {
   const id = ELEMENT_COUNTER++;
-  const name = componentOpts.name;
+  const name = component.name;
 
-  const element = ELEMENTS[id] = {
+  const element = COMPONENTS[id] = {
     id,
-    state: { [name]: componentOpts.component },
+    bindings: { [name]: component },
   };
 
   STATE[id] = {};
@@ -59,7 +66,7 @@ function createElement (componentOpts) {
   sendToRenderQueue([id], { [name]: false });
   applyChanges();
   element.el = STATE[id][name][LIB_ATTR.SELF].el;
-  element.el.setAttribute(LIB_ATTR.COMPONENT_TYPE, LIB_ATTR.BASE);
+  element.ci = createAccessor([id, name]);
 
   return element;
 }
@@ -72,6 +79,7 @@ function createAccessor (path) {
     component,
     values,
     path,
+    index: +path[ path.length - 2 ],
     startTransaction,
     applyChanges,
     up: (level) => moveUpStatePath(level, path.slice()),
@@ -101,10 +109,10 @@ function prepareChangeObject (changeObj) {
 }
 
 function getComponent (path) {
-  let component = ELEMENTS[ path[0] ];
+  let component = COMPONENTS[ path[0] ];
 
   for (let i = 1; i < path.length; i++) {
-    component = component.state[ path[i] ];
+    component = component.bindings[ path[i] ];
     
     if (component.isList && i !== (path.length -1)) {
       component = component.listItem;
@@ -115,10 +123,6 @@ function getComponent (path) {
   return component;
 }
 
-function getOnlyValues (obj) {
-  return map(obj, (bindingValues) => bindingValues['value']);
-}
-
 function getValues (accessor, key, statePath) {
   const values = accessor.values;
   const component = accessor.component;
@@ -127,7 +131,7 @@ function getValues (accessor, key, statePath) {
     return getValuesTree(values, component, {});
   }
 
-  const binding = component.state[key];
+  const binding = component.bindings[key];
   if (binding.isList || binding.isComponent) {
     return createAccessor(statePath.concat(key));
   }
@@ -141,7 +145,7 @@ function getValuesTree (values, component, valuesTree) {
       return;
     }
 
-    const binding = component.state[bindingName];
+    const binding = component.bindings[bindingName];
 
     if (binding.isList) {
       valuesTree[bindingName] = [];
@@ -166,7 +170,7 @@ function getValuesTree (values, component, valuesTree) {
 function moveUpStatePath (level, statePath) {
   let lastIdx = statePath.length;
 
-  if (level === '') {
+  if (level === '' || level === ' ') {
     return createAccessor(statePath.slice(0, 2));
   }
 
@@ -177,14 +181,18 @@ function moveUpStatePath (level, statePath) {
       }
     }
 
-    return createAccessor(statePath.slice(0, lastIdx + 1));
+  } else {
+    level = level || 1;
+    while (lastIdx-- && level--) {
+      if (isNumber(+statePath[lastIdx - 1])) {
+        lastIdx--;
+      }
+    }
+
   }
 
-  level = level || 1;
-  while (lastIdx-- && level--) {
-    if (isNumber(+statePath[lastIdx - 1])) {
-      lastIdx--;
-    }
+  if (lastIdx < 1) {
+    throw new ComponentLookupError(level, statePath);
   }
 
   return createAccessor(statePath.slice(0, lastIdx + 1));
@@ -234,4 +242,69 @@ function mapList (accessor, cb) {
   const newList = [];
   iterateListValues(accessor, (el, i) => newList.push( cb ? cb(el, i) : el ));
   return newList;
+}
+
+function createBinding (name, component, el) {
+  if (VALUE_TYPES.includes(name)) {
+    throw new ForbiddenBindingNameError(name);
+  }
+
+  const componentOpts = (component) ? {
+    id: component.stateId + LIB_ATTR.STATE_DELIMITER + name,
+    statePath: component.statePath,
+    stateNames: component.stateNames,
+    isListItem: component.isList,
+    stateId: name,
+  } : {};
+
+  const elOpts = (el) ? {
+    initValue: el.value || el.innerHTML
+  } : {};
+
+  return Object.assign({
+    name,
+    listeners: [],
+    markup: el,
+    dependants: {},
+    events: {},
+    evaluate: {},
+    links: {},
+    bindings: { [LIB_ATTR.SELF]: {} },
+    outerNames: {},
+    _links: {},
+    styles: {},
+  }, componentOpts, elOpts);
+}
+
+function modifyToListBinding (binding, itemMarkup) {
+  binding.isList = true;
+
+  return Object.assign(binding, {
+    markup: itemMarkup,
+    listItem: createBinding(itemMarkup.tagName, binding, itemMarkup),
+  });
+}
+
+function getStatePathFromNode (el) {
+  const indexlessStatePath = el.getAttribute(LIB_ATTR.BINDING_ID).split(LIB_ATTR.STATE_DELIMITER);
+  indexlessStatePath.pop();
+
+  const statePath = [];
+
+  let elementName;
+  while ((elementName = getRealName( indexlessStatePath.pop() ))) {
+
+    if (has(elementName, LIB_ATTR.ITEM)) {
+      elementName = elementName.slice(LIB_ATTR.ITEM.length);
+      el = walkUpNodes(el, (el) => el.getAttribute(LIB_ATTR.ITEM_INDEX));
+      const idx = el.getAttribute(LIB_ATTR.ITEM_INDEX);
+      el = el.parentNode;
+      statePath.unshift(idx, elementName);
+      continue;
+    }
+
+    statePath.unshift(elementName);
+  }
+
+  return statePath;
 }

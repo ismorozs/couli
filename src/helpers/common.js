@@ -16,7 +16,7 @@ const NAMES = {
 };
 
 function getShortName (name) {
-  if (NAMES.real[name]) {
+  if (NAMES.real[name] > -1) {
     return NAMES.real[name];
   }
 

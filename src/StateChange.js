@@ -1,6 +1,6 @@
-import LIB_ATTR from './globals/attributes';
+import LIB_ATTR from './values/attributes';
 
-import { set, forEach, map, toObject } from './helpers/object';
+import { set, forEach, map, toObject, mapKeys } from './helpers/object';
 
 import {
   isEmpty,
@@ -15,13 +15,12 @@ import {
   getComponent,
   createAccessor,
   prepareChangeObject,
-  getOnlyValues,
   setState,
 } from './State';
 
 import { renderChanges } from './View';
 
-import { VALUE_TYPES } from './Definition';
+import { VALUE_TYPES } from './values/index';
 
 import BindingNotExistsError from './errors/BindingNotExistsError';
 
@@ -81,13 +80,15 @@ function isCollectingChanges () {
   return CHANGES.collecting;
 }
 
-function addLifeCycleHook (hookType, binding, values, accessor, idx) {
+function addLifeCycleHook (hookType, binding, values, accessor) {
   const hook = binding.hooks[hookType];
   
   LIFE_CYCLE_HANDLERS.list.push(() => {
-    const el = values[binding.name || LIB_ATTR.SELF].el;
-    const vals = !binding.name ? getOnlyValues(values) : values[binding.name].value;
-    hook(el, vals, accessor, idx);
+    const name = binding.name || binding.statePath[ binding.statePath.length - 1 ];
+    const isComponent = !binding.name;
+    const el = values[ binding.name || LIB_ATTR.SELF ].el || values[ LIB_ATTR.SELF ].el;
+    const value = !binding.name ? accessor.get() : accessor.get(binding.name);
+    hook({ el, value, name, isComponent }, accessor);
   });
 }
 
@@ -96,20 +97,20 @@ function createStateNodes (statePath) {
   const valuesNode = createStateNode(component);
   setState(statePath, valuesNode);
 
-  forEach(component.state, (binding, bindingName) => {
+  forEach(component.bindings, (binding, bindingName) => {
     if (binding.isComponent) {
       createStateNodes(statePath.concat(bindingName));
     }
   });
 
   const accessor = createAccessor(statePath);
-  addLifeCycleHook('mount', component.state[LIB_ATTR.SELF], valuesNode, accessor, statePath.slice(-2)[0]);
+  addLifeCycleHook('mount', component.bindings[LIB_ATTR.SELF], valuesNode, accessor, statePath.slice(-2)[0]);
 
   return valuesNode;
 }
 
 function createStateNode (component) {
-  const valuesNodes = map(component.state, (binding) => {
+  const valuesNodes = map(component.bindings, (binding) => {
     const valueNode = binding.isList ? [] : {};
 
     return VALUE_TYPES.reduce((a, key) => {
@@ -146,7 +147,7 @@ function setValues (changeValues, statePath, calledDependences) {
 
   forEach(changeValues, (change, bindingName) => setValue(bindingName, change, accessor, calledDependences));
 
-  addLifeCycleHook('update', accessor.component.state[LIB_ATTR.SELF], accessor.values, accessor, statePath.slice(-2)[0]);
+  addLifeCycleHook('update', accessor.component.bindings[LIB_ATTR.SELF], accessor.values, accessor, statePath.slice(-2)[0]);
 
   if (isCollectingChanges()) {
     return new Promise((res) => PROMISES_RESOLVES.push(res));
@@ -159,20 +160,23 @@ function setValue (bindingName, change, accessor, calledDependences) {
   const statePath = accessor.path;
   const component = accessor.component;
   const values = accessor.values;
-  let binding = component.state[bindingName];
+  let binding = component.bindings[bindingName];
+  let outerBindingName = bindingName;
 
   if (!binding) {
     bindingName = component.outerNames[bindingName];
-    binding = component.state[bindingName];
+    binding = component.bindings[bindingName];
   }
 
   if (!binding) {
-    throw new BindingNotExistsError(bindingName, component.name, statePath);
+    throw new BindingNotExistsError(bindingName || outerBindingName, component.stateName, statePath);
   }
 
   if (change.type === 'value') {
     if (binding.isList) {
-      return setValueForList(binding, change, values[bindingName], accessor);
+      setValueForList(binding, change, values[bindingName], accessor);
+      updateDependants(binding.dependants, component, accessor, calledDependences);
+      return;
     }
 
     if (isObject(change.value) && binding.isComponent) {
@@ -201,15 +205,20 @@ function setValue (bindingName, change, accessor, calledDependences) {
       setValue(link.link, { value: change.value, type: 'value', force: change.force }, accessor.down(link.component), []);
     }
 
-    forEach(binding.dependants, (dependant, dependantKey) => {
-      if (has(calledDependences, dependantKey)) {
-        return;
-      }
-
-      const newValue = component.state[dependant.name].evaluate[dependant.type](values, accessor);
-      setValue(dependant.name, { value: newValue, type: dependant.type }, accessor, calledDependences);
-    });
+    updateDependants(binding.dependants, component, accessor, calledDependences);
   }
+}
+
+function updateDependants (dependants, component, accessor, calledDependences) {
+  forEach(dependants, (dependant, dependantKey) => {
+    if (has(calledDependences, dependantKey)) {
+      return;
+    }
+
+    const values = mapKeys(accessor.get(), (k) => component.outerNames[k] || k);
+    const newValue = component.bindings[dependant.name].evaluate[dependant.type](values, accessor);
+    setValue(dependant.name, { value: newValue, type: dependant.type }, accessor, calledDependences);
+  });
 }
 
 function setValueForList (binding, change, arr, accessor) {
@@ -253,6 +262,8 @@ function modifyList (action, args, accessor) {
 
   forEach(changeObj, (change, idx) => sendToRenderQueue(listPath.concat(idx, itemName, LIB_ATTR.FULL_CHANGE), changeObj[idx][LIB_ATTR.FULL_CHANGE]));
 
+  updateDependants(accessor.component.dependants, accessor.up().component, accessor.up(), []);
+
   if (isCollectingChanges()) {
     return new Promise((res) => PROMISES_RESOLVES.push(res));
   }
@@ -284,6 +295,6 @@ function removeFromList (arr, start, end, listBinding, accessor) {
 
 function removeListItem (arr, idx, listBinding, accessor) {
   const removedNode = arr.splice(idx, 1)[0][listBinding.listItem.name];
-  addLifeCycleHook('remove', listBinding.listItem.state[LIB_ATTR.SELF], removedNode, accessor, idx);
+  addLifeCycleHook('remove', listBinding.listItem.bindings[LIB_ATTR.SELF], removedNode, accessor, idx);
   return removedNode[LIB_ATTR.SELF].el;
 }

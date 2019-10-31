@@ -11,6 +11,7 @@ export {
   insertBeforeNode,
   rewriteToNode,
   emptyNode,
+  walkUpNodes
 };
 
 function replaceNodes (original, replacement) {
@@ -42,6 +43,21 @@ function walkNodes (node, cb) {
     .slice
     .call(node.children)
     .forEach((el) => walkNodes(el, cb));
+}
+
+function walkUpNodes (el, stopCondition, cb) {
+  let curEl = el;
+
+  while (!stopCondition(curEl)) {
+    if (curEl.tagName === 'BODY') {
+      return curEl;
+    }
+
+    cb && cb(curEl);
+    curEl = curEl.parentNode;
+  }
+
+  return curEl;
 }
 
 function collectHTMLNodes (root, isWanted) {

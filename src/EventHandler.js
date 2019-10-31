@@ -1,10 +1,11 @@
-import LIB_ATTR from './globals/attributes';
+import LIB_ATTR from './values/attributes';
 
 import { forEach } from './helpers/object';
-import { getRealName, has } from './helpers/common';
+import { walkUpNodes } from './helpers/dom';
 
 import {
   createAccessor,
+  getStatePathFromNode
 } from './State';
 
 import {
@@ -22,15 +23,15 @@ function setupEventHandlers (element) {
 
   const markup = element.el;
   for (let eventName in eventHandlers) {
-    markup.addEventListener(eventName, (e) => executeAllCallbacksInList(e, eventHandlers[eventName], element));
+    markup.addEventListener(eventName, (e) => executeAllCallbacksInList(e, eventHandlers[eventName]));
   }
 }
 
 function gatherAllEventHandlers (component, gatheredHandlers) {
   gatherEventHandlers (component, gatheredHandlers);
 
-  if (component.state) {
-    forEach(component.state, (binding) => gatherAllEventHandlers(binding, gatheredHandlers));
+  if (component.bindings) {
+    forEach(component.bindings, (binding) => gatherAllEventHandlers(binding, gatheredHandlers));
   }
 
   if (component.listItem) {
@@ -52,28 +53,32 @@ function gatherEventHandlers (binding, gatheredHandlers) {
   }
 }
 
-function executeAllCallbacksInList (e, eventHandlers, element) {
+function executeAllCallbacksInList (e, eventHandlers) {
   decorateEvent(e);
   startTransaction();
   
-  let curHTMLNode = e.target;
-  while (curHTMLNode !== element.el.parentNode) {
-    const bindingId = curHTMLNode.getAttribute(LIB_ATTR.BINDING_ID);
-    const eventHandler = eventHandlers[bindingId];
+  const handlers = [];
+  const rootNode = walkUpNodes(
+    e.target,
+    (el) => el.getAttribute(LIB_ATTR.COMPONENT_TYPE) == LIB_ATTR.BASE,
+    (el) => {
+      const bindingId = el.getAttribute(LIB_ATTR.BINDING_ID);
+      const eventHandler = eventHandlers[bindingId];
 
-    if (eventHandler) {
-      const indexlessStatePath = bindingId.split(LIB_ATTR.STATE_DELIMITER);
-      indexlessStatePath.pop();
-      const statePathToItem = getStatePathToItem(curHTMLNode, indexlessStatePath);
-      const accessorToData = createAccessor([element.id].concat(statePathToItem));
-
-      eventHandler.call(this, e, curHTMLNode, accessorToData, +statePathToItem.slice(-2)[0]);
-
-      if (e.propagationStopped) {
-        break;
+      if (eventHandler) {
+        handlers.push({ fn: eventHandler, path: getStatePathFromNode(el) });
       }
+    });
+
+  const componentId = rootNode.firstElementChild.getAttribute(LIB_ATTR.COMPONENT_ID);
+
+  for (let i = 0; i < handlers.length; i++) {
+    const { fn, path } = handlers[i];
+    fn.call(this, e, createAccessor([componentId].concat(path)));
+
+    if (e.propagationStopped) {
+      break;
     }
-    curHTMLNode = curHTMLNode.parentNode;
   }
 
   applyChanges();
@@ -84,37 +89,5 @@ function decorateEvent (e) {
   e.stopPropagation = () => {
     e.propagationStopped = true;
     stopPropagation();
-  }
-}
-
-function getStatePathToItem (el, indexlessStatePath) {
-  const statePath = [];
-
-  let elementName;
-  while ((elementName = getRealName( indexlessStatePath.pop() ))) {
-
-    if (has(elementName, LIB_ATTR.ITEM)) {
-      elementName = elementName.slice(LIB_ATTR.ITEM.length);
-      el = getToItemNode(el);
-      const idx = el.getAttribute(LIB_ATTR.ITEM_INDEX);
-      el = el.parentNode;
-      statePath.unshift(idx, elementName);
-      continue;
-    }
-
-    statePath.unshift(elementName);
-  }
-
-  return statePath;
-}
-
-function getToItemNode (el) {
-  let curEl = el;
-
-  while (curEl.tagName !== 'BODY') {
-    if (curEl.getAttribute(LIB_ATTR.ITEM_INDEX)) {
-      return curEl;
-    }
-    curEl = curEl.parentNode;
   }
 }

@@ -4,9 +4,12 @@
   <title></title>
 </head>
 <body>
+
+  <div id="app"></div>
+
   <script type="text/javascript" src="couli.js"></script>
   <script type="text/javascript">
-    Couli.define('calculator', `
+    const Calculator = Couli.define(`
       <div>
         <span>A: </span> <input x-b="arg1">
         <br>
@@ -18,12 +21,12 @@
       </div>
     `, {
 
-      arg1: { events: { keyup: (e, el, a) => a.set({ arg1: +e.target.value || '' }) } },
-      arg2: { events: { keyup: (e, el, a) => a.set({ arg2: +e.target.value || '' }) } },
+      arg1: { events: { keyup: (e, ci) => ci.set({ arg1: +e.target.value || '' }) } },
+      arg2: { events: { keyup: (e, ci) => ci.set({ arg2: +e.target.value || '' }) } },
       operation: {},
 
       operationChoices: {
-        events: { change: (e, el, a) => a.set({ operation: e.target.value }) },
+        events: { change: (e, ci) => ci.set({ operation: e.target.value }) },
       },
 
       result: {
@@ -31,18 +34,20 @@
         html: ($) => 'A ' + $.operation + ' B = ' + $.result
       },
 
-      '': { hooks: { mount: (e, vals, a) => a.set({
-        operation: '+',
+      '': {
+        hooks: {
+          mount: (component, ci) => ci.set({
+            operation: '+',
 
-        operationChoices: [
-          { choice: '+' },
-          { choice: '-' },
-          { choice: '*' },
-          { choice: '/' }
-        ]
-      })
-      }}
-
+            operationChoices: [
+              { choice: '+' },
+              { choice: '-' },
+              { choice: '*' },
+              { choice: '/' }
+            ]
+          })
+        }
+      }
     });
 
     function calculate (first, second, operation) {
@@ -57,14 +62,8 @@
           return first / second;
       }
     }
-  </script>
 
-  <div id="app">
-    <calculator>
-  </div>
-
-  <script type="text/javascript">
-    Couli.apply('#app')
+    Couli.apply(document.getElementById('app'), Calculator);
   </script>
 </body>
 </html>

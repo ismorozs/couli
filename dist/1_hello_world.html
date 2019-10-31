@@ -4,19 +4,14 @@
   <title></title>
 </head>
 <body>
+    <div id="app"></div>
+
   <script type="text/javascript" src="couli.js"></script>
 
   <script type="text/javascript">
-    Couli.define('hello-world', '<span>Hello world!</span>');
+    const HelloWorld = Couli.define('<span>Hello world!</span>');
+
+    Couli.apply(document.getElementById('app'), HelloWorld);
   </script>
-
-  <div id="app">
-    <hello-world>
-  </div>
-
-  <script type="text/javascript">
-    Couli.apply('#app')
-  </script>
-
 </body>
 </html>

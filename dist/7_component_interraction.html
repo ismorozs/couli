@@ -3,18 +3,18 @@
 <head>
   <title></title>
   <style type="text/css">
-    div {
-      border: 2px solid black;
-    }
     span {
       background-color: white;
     }
   </style>
 </head>
 <body>
-  <script type="text/javascript" src="couli.js"></script>
 
+  <div id="app"></div>
+
+  <script type="text/javascript" src="couli.js"></script>
   <script type="text/javascript">
+
     window.COLORS = ['white', 'red', 'green', 'blue', 'orange', 'grey', 'yellow', 'violet', 'teal', 'purple', 'pink'];
 
     const styleStr = window.COLORS.reduce((a, v) => `${a} .${v} {background-color: ${v} }\n`, '');
@@ -23,69 +23,103 @@
     styleEl.appendChild( document.createTextNode(styleStr) );
     document.head.appendChild(styleEl);
 
-    function evaluateClass (item) {
+    function evaluateClass (item, a) {
       return window.COLORS.reduce((a, v) => {
         a[v] = v === item.color
         return a;
       }, {})
     }
-  </script>
 
-  <script type="text/javascript">
-    Couli.define('select', `
+    /******************************************************************************************/
+    const Select = Couli.define(`
       <select x-lb='options'>
         <option x-b="option">
       </select>
     `, {
-      options: { events: { change: (e, el, ci) => { ci.up().set({ choosen: e.target.value }) } } }
+      choosen: {},
+      options: {
+        events: { change: (e, ci) => { ci.up().set({ choosen: e.target.value }) } },
+        listItem: {
+          bindings: {
+            option: {
+              attrs: ($) => ({ value: $.val }),
+              html: ($) => $.text,
+            },
+          }
+        },
+        attrs: ($) => ({ value: $.choosen })
+      }
     });
 
-    Couli.define('text', `
+    /******************************************************************************************/
+    const Text = Couli.define(`
       <span x-b='text'></span>
     `, {}, {
       '': {
         position: 'absolute',
-        top: 0,
-        right: 0
+        bottom: 3,
+        right: 3
       }
     });
 
-    Couli.define('select-color', `
-        <select options=colors>
+    /******************************************************************************************/
+    const SelectColor = Couli.define({
+      select: [ Select, { options: 'colors' } ]
+    },`
+        <select>
     `, {
       colors: {},
-      choosen: { hooks: { update: (e, val, ci) => { ci.up().set({ choosenColor: val }) } } },
-      '': { hooks: { mount: (el, vals, ci) => ci.set({ choosen: 'white', colors: window.COLORS.map((el) => ({ option: el })) }) } }
+      choosen: { hooks: { update: (binding, ci) => { ci.up().set({ choosenColor: binding.value }) } } },
+      '': { hooks: { mount: (component, ci) => ci.set({ choosen: 'white', colors: window.COLORS.map((el) => ({ val: el, text: el })) }) } }
     });
 
-    Couli.define('select-child-color', `
+    /******************************************************************************************/
+    const SelectChildColor = Couli.define({
+      selectColor: [ SelectColor ]
+    }, `
       <select-color>
     `, {
-      choosenColor: { hooks: { update: (el, val, ci) => { ci.up().set({ childColor: val }) } } }
+      choosenColor: { hooks: { update: (binding, ci) => ci.up().set({ childColor: binding.value }) } }
     });
 
-    Couli.define('select-target', `
-      <select options=targets>
+    /******************************************************************************************/
+    const SelectTarget = Couli.define({
+      select: [ Select, { options: 'targets' } ]
+    }, `
+      <select>
     `, {
       targets: {},
-      choosen: { hooks: { update: (e, val, ci) => { ci.up().set({ target: val }) } } },
-      '': { hooks: { mount: (el, vals, ci) => ci.set({ choosen: '', targets: [{ option: ''}, { option: 'bigSquare'}, { option: 'middleSquare'}, { option: 'smallSquare'}] }) } },
+      choosen: { hooks: { update: (binding, ci) => { ci.up().set({ target: binding.value }) } } },
+      '': { hooks: { mount: (component, ci) => ci.set({
+        choosen: '',
+        targets: [
+          { val: ' ', text: 'Biggest square'},
+          { val: 'bigSquare', text: 'Big square'},
+          { val: 'middleSquare', text: 'Middle square'},
+          { val: 'smallSquare', text: 'Small square'}
+        ]
+      }) } },
     });
 
-    Couli.define('small-square', `
+    /******************************************************************************************/
+    const SmallSquare = Couli.define({
+      text: [ Text ],
+      selectColor: [ SelectColor ],
+      selectTarget: [ SelectTarget ]
+    }, `
       <div>
-        <text x-state-name="orderedNumber"></text>
+        <text></text>
         <span>Set color </span><select-color></select-color>
         <span>for </span> <select-target></select-target>
       </div>
     `, {
       '': {
         class: evaluateClass,
-        hooks: { mount: (el, vals, ci) => ci.set({ orderedNumber: { text: '№4' } }) }
+        hooks: { mount: (binding, ci) => ci.set({ text: { text: 'Small square' } }) }
       },
-      color: {},
-      choosenColor: { hooks: { update: (el, val, ci) => ci.up( ci.get('target') ).set({ color: val }) } },
-      target: { hooks: { update: (el, val, ci) => ci.up(val).set({ color: ci.get('choosenColor') }) } },
+      color: { hooks: { update: (binding, ci) => ci.up().set({ selectChildColor: { selectColor: { select: { choosen: binding.value } } } }) } },
+      choosenColor: { hooks: { update: (binding, ci) => ci.up( ci.get('target') ).set({ color: binding.value }) } },
+      target: { hooks: { update: (binding, ci) => ci.up(binding.value).set({ color: ci.get('choosenColor') }) } },
     }, {
       '':  {
         width: 300,
@@ -94,18 +128,23 @@
       }
     });
 
-    Couli.define('middle-square', `
+    /******************************************************************************************/
+    const MiddleSquare = Couli.define({
+      text: [ Text ],
+      selectChildColor: [ SelectChildColor ],
+      smallSquare: [ SmallSquare, { color: 'childColor' } ]
+    }, `
       <div>
         <span>Child color: </span><select-child-color></select-child-color>
-        <text x-state-name="orderedNumber"></text>
-        <small-square color='childColor'  x-state-name="smallSquare">
+        <text></text>
+        <small-square>
       </div>
     `, {
-      color: {},
+      color: { hooks: { update: (binding, ci) => ci.up().set({ selectChildColor: { selectColor: { select: { choosen: binding.value } } } }) } },
       childColor: {},
       '': {
         class: evaluateClass,
-        hooks: { mount: (el, vals, ci) => ci.set({ orderedNumber: { text: '№3' } }) }
+        hooks: { mount: (component, ci) => ci.set({ text: { text: 'Middle square' } }) }
       }
     }, {
       '': {
@@ -115,18 +154,23 @@
       }
     });
 
-    Couli.define('big-square', `
+    /******************************************************************************************/
+    const BigSquare = Couli.define({
+      text: [ Text ],
+      selectChildColor: [ SelectChildColor ],
+      middleSquare: [ MiddleSquare ]
+    }, `
       <div>
         <span>Child color: </span><select-child-color></select-child-color>
-        <text x-state-name="orderedNumber"></text>
-        <middle-square color='childColor'  x-state-name="middleSquare">
+        <text></text>
+        <middle-square>
       </div>
     `, {
-      color: {},
-      childColor: {},
+      color: { hooks: { update: (binding, ci) => ci.up().set({ selectChildColor: { selectColor: { select: { choosen: binding.value } } } }) } },
+      childColor: { hooks: { update: (binding, ci) => ci.set({ middleSquare: { color: binding.value } }) } },
       '': {
         class: evaluateClass,
-        hooks: { mount: (el, vals, ci) => ci.set({ orderedNumber: { text: '№2' } }) }
+        hooks: { mount: (component, ci) => ci.set({ text: { text: 'Big square' } }) }
       }
     }, {
       '': {
@@ -136,23 +180,40 @@
       }
     });
 
-    Couli.define('app', `
+    /******************************************************************************************/
+    const App = Couli.define({
+      text: [ Text ],
+      selectChildColor: [ SelectChildColor ],
+      bigSquare: [ BigSquare ]
+    }, `
       <div>
         <span>Child color: </span><select-child-color></select-child-color>
-        <text x-state-name="orderedNumber"></text>
-        <big-square color='childColor' x-state-name="bigSquare">
+        <text></text>
+        <big-square>
       </div>
     `, {
-      childColor: {},
+      childColor: { hooks: { update: (binding, ci) => ci.set({ bigSquare: { color: binding.value } }) } },
       color: {},
       '': {
         class: evaluateClass,
-        hooks: { mount: (el, vals, ci) => ci.set({ orderedNumber: { text: '№1' } }) }
+        hooks: { mount: (binding, ci) => ci.set({ text: { text: 'Biggest square' } }) }
       }
     }, {
       '': {
-        position: 'relative'
+        position: 'relative',
+        width: 750,
+        height: 750,
+        border: '2px solid black'
       },
+
+      div: {
+        border: '2px solid black'
+      },
+
+      span: {
+        'backgroundColor': 'white',
+      },
+
       number: {
         position: 'absolute',
         top: 0,
@@ -161,14 +222,7 @@
       }
     })
 
-  </script>
-
-  <div id="app">
-    <app>
-  </div>
-
-  <script type="text/javascript">
-    Couli.apply('#app')
+    Couli.apply(document.getElementById('app'), App);
   </script>
 </body>
 </html>
