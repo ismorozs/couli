@@ -219,6 +219,7 @@ To save the time and effort of writing and reading various binding options in fu
 | ```_etr``` |  ```events.transitionrun``` |
 | ```_efr``` |  ```events.reset``` |
 | ```_efs``` |  ```events.submit``` |
+| ```_ech``` |  ```events.change``` |
 | ```_ekd``` |  ```events.keydown``` |
 | ```_ekp``` |  ```events.keypress``` |
 | ```_eku``` |  ```events.keyup``` |

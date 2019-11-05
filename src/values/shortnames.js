@@ -28,6 +28,7 @@ const EVENT_SHORTNAMES = {
 
   _efr: 'reset',
   _efs: 'submit',
+  _ech: 'change',
 
   _ekd: 'keydown',
   _ekp: 'keypress',
